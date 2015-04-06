@@ -1,13 +1,10 @@
 <?php
-if ( !defined( 'EVENT_ESPRESSO_VERSION' ) ) {
-	exit( 'No direct script access allowed' );
-}
 /*
   Plugin Name: WP API Pretty JSON
   Plugin URI: http://www.eventespresso.com
   Description: Plugin for changing all JSON returned by the WP API into pretty JSON for easier debugging and development
   Version: 0.1.0
-  Author: Event Espresso
+  Author: Event Espresso (Mike Nelson)
   Author URI: http://www.eventespresso.com
   Copyright 2014 Event Espresso (email : support@eventespresso.com)
 
@@ -40,26 +37,23 @@ if ( !defined( 'EVENT_ESPRESSO_VERSION' ) ) {
  */
 add_filter( 'json_serve_request', 'wp_api_pretty_json_serve_request', 10, 5 );
 function wp_api_pretty_json_serve_request( $served, $result, $path, $method, $server ){
-//	$served = apply_filters( 'json_serve_request', false, $result, $path, $this->method, $this );
-//
-//		if ( ! $served ) {
-			if ( 'HEAD' === $method ) {
-				return false;
-			}
+		if ( 'HEAD' === $method ) {
+			return false;
+		}
 
-			$result = json_encode( $server->prepare_response( $result ) );
+		$result = json_encode( $server->prepare_response( $result ) );
 
-			$result = wp_api_pretty_json_prettify( $result );
+		$result = wp_api_pretty_json_prettify( $result );
 
 
-			if ( isset( $_GET['_jsonp'] ) ) {
-				// Prepend '/**/' to mitigate possible JSONP Flash attacks
-				// http://miki.it/blog/2014/7/8/abusing-jsonp-with-rosetta-flash/
-				echo '/**/' . $_GET['_jsonp'] . '(' . $result . ')';
-			} else {
-				echo $result;
-			}
-		return true;
+		if ( isset( $_GET['_jsonp'] ) ) {
+			// Prepend '/**/' to mitigate possible JSONP Flash attacks
+			// http://miki.it/blog/2014/7/8/abusing-jsonp-with-rosetta-flash/
+			echo '/**/' . $_GET['_jsonp'] . '(' . $result . ')';
+		} else {
+			echo $result;
+		}
+	return true;
 }
 /**
 * grabbed from  http://www.php.net/manual/en/function.json-encode.php#80339,
