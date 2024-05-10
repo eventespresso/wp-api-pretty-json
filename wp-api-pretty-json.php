@@ -1,4 +1,5 @@
 <?php
+
 /*
   Plugin Name: WP API Pretty JSON
   Plugin URI: http://www.eventespresso.com
@@ -35,15 +36,15 @@
  *
  * ------------------------------------------------------------------------
  */
-add_filter('rest_pre_serve_request','wp_api_pretty_json_serve_request', 10, 4);
+add_filter('rest_pre_serve_request', 'wp_api_pretty_json_serve_request', 10, 4);
 function wp_api_pretty_json_serve_request(
-        $served,
-        WP_REST_Response $result,
-        WP_REST_Request $request,
-        WP_REST_Server $server
-){
+    $served,
+    WP_REST_Response $result,
+    WP_REST_Request $request,
+    WP_REST_Server $server
+) {
 
-    //copy all this from WP_REST_Server::serve() in order to get the jsonp callback
+    // copy all this from WP_REST_Server::serve() in order to get the jsonp callback
     /**
      * Filters whether jsonp is enabled.
      *
@@ -51,28 +52,28 @@ function wp_api_pretty_json_serve_request(
      *
      * @param bool $jsonp_enabled Whether jsonp is enabled. Default true.
      */
-    $jsonp_enabled = apply_filters( 'rest_jsonp_enabled', true );
+    $jsonp_enabled = apply_filters('rest_jsonp_enabled', true);
 
     $jsonp_callback = null;
 
-    //copy all this from WP_REST_Server::serve() too in order to change the response to pretty
-    if ( 'HEAD' === $request->get_method() ) {
+    // copy all this from WP_REST_Server::serve() too in order to change the response to pretty
+    if ('HEAD' === $request->get_method()) {
         return null;
     }
 
     // Embed links inside the request.
-    $result = $server->response_to_data( $result, isset( $_GET['_embed'] ) );
+    $result = $server->response_to_data($result, isset($_GET['_embed']));
 
-    $result = wp_api_pretty_json_prettify( $result );
+    $result = wp_api_pretty_json_prettify($result);
 
     $json_error_message = wp_api_pretty_json_get_json_last_error();
-    if ( $json_error_message ) {
-        $json_error_obj = new WP_Error( 'rest_encode_error', $json_error_message, array( 'status' => 500 ) );
-        $result = wp_api_pretty_json_error_to_response( $json_error_obj );
-        $result = wp_api_pretty_json_prettify( $result->data[0] );
+    if ($json_error_message) {
+        $json_error_obj = new WP_Error('rest_encode_error', $json_error_message, array( 'status' => 500 ));
+        $result = wp_api_pretty_json_error_to_response($json_error_obj);
+        $result = wp_api_pretty_json_prettify($result->data[0]);
     }
 
-    if ( $jsonp_callback ) {
+    if ($jsonp_callback) {
         // Prepend '/**/' to mitigate possible JSONP Flash attacks.
         // https://miki.it/blog/2014/7/8/abusing-jsonp-with-rosetta-flash/
         echo '/**/' . $jsonp_callback . '(' . $result . ')';
@@ -83,25 +84,27 @@ function wp_api_pretty_json_serve_request(
     return true;
 }
 
-function wp_api_pretty_json_get_json_last_error() {
+function wp_api_pretty_json_get_json_last_error()
+{
     // See https://core.trac.wordpress.org/ticket/27799.
-    if ( ! function_exists( 'json_last_error' ) ) {
+    if (! function_exists('json_last_error')) {
         return false;
     }
 
     $last_error_code = json_last_error();
 
-    if ( ( defined( 'JSON_ERROR_NONE' ) && JSON_ERROR_NONE === $last_error_code ) || empty( $last_error_code ) ) {
+    if (( defined('JSON_ERROR_NONE') && JSON_ERROR_NONE === $last_error_code ) || empty($last_error_code)) {
         return false;
     }
 
     return json_last_error_msg();
 }
 
-function wp_api_pretty_json_error_to_response( $error ) {
+function wp_api_pretty_json_error_to_response($error)
+{
     $error_data = $error->get_error_data();
 
-    if ( is_array( $error_data ) && isset( $error_data['status'] ) ) {
+    if (is_array($error_data) && isset($error_data['status'])) {
         $status = $error_data['status'];
     } else {
         $status = 500;
@@ -109,20 +112,20 @@ function wp_api_pretty_json_error_to_response( $error ) {
 
     $errors = array();
 
-    foreach ( (array) $error->errors as $code => $messages ) {
-        foreach ( (array) $messages as $message ) {
-            $errors[] = array( 'code' => $code, 'message' => $message, 'data' => $error->get_error_data( $code ) );
+    foreach ((array) $error->errors as $code => $messages) {
+        foreach ((array) $messages as $message) {
+            $errors[] = array( 'code' => $code, 'message' => $message, 'data' => $error->get_error_data($code) );
         }
     }
 
     $data = $errors[0];
-    if ( count( $errors ) > 1 ) {
+    if (count($errors) > 1) {
         // Remove the primary error.
-        array_shift( $errors );
+        array_shift($errors);
         $data['additional_errors'] = $errors;
     }
 
-    $response = new WP_REST_Response( $data, $status );
+    $response = new WP_REST_Response($data, $status);
 
     return $response;
 }
@@ -146,7 +149,7 @@ function wp_api_pretty_json_prettify($json_obj)
     $json = json_encode($json_obj);
     $len = strlen($json);
     for ($c = 0; $c < $len; $c++) {
-        $char = $json[$c];
+        $char = $json[ $c ];
         switch ($char) {
             case '{':
             case '[':
@@ -181,7 +184,7 @@ function wp_api_pretty_json_prettify($json_obj)
                 }
                 break;
             case '"':
-                if ($c > 0 && $json[$c - 1] != '\\') {
+                if ($c > 0 && $json[ $c - 1 ] != '\\') {
                     $in_string = ! $in_string;
                 }
             default:
@@ -191,8 +194,3 @@ function wp_api_pretty_json_prettify($json_obj)
     }
     return $new_json;
 }
-
-
-
-
-
